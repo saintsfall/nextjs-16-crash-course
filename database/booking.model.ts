@@ -1,0 +1,51 @@
+import mongoose, { Schema, type Model, type Types } from "mongoose";
+
+import { Event } from "./event.model";
+
+export interface IBooking {
+  eventId: Types.ObjectId;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const EMAIL_REGEX =
+  /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+
+const bookingSchema = new Schema<IBooking>(
+  {
+    eventId: {
+      type: Schema.Types.ObjectId,
+      ref: "Event",
+      required: true,
+      index: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      minlength: 1,
+      match: [EMAIL_REGEX, "Please provide a valid email address"],
+    },
+  },
+  { timestamps: true },
+);
+
+bookingSchema.pre("save", async function () {
+  const email = this.email.trim().toLowerCase();
+  if (!EMAIL_REGEX.test(email)) {
+    throw new Error(`Invalid email address: ${this.email}`);
+  }
+  this.email = email;
+
+  // MongoDB does not enforce foreign keys; confirm the Event still exists.
+  const eventExists = await Event.exists({ _id: this.eventId });
+  if (!eventExists) {
+    throw new Error(`Cannot save booking: Event ${String(this.eventId)} does not exist`);
+  }
+});
+
+export const Booking: Model<IBooking> =
+  (mongoose.models.Booking as Model<IBooking> | undefined) ??
+  mongoose.model<IBooking>("Booking", bookingSchema);
