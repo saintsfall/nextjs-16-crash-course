@@ -1,6 +1,11 @@
 'use client';
 
 import Image from "next/image";
+import posthog from "posthog-js";
+
+const isPostHogConfigured = Boolean(
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST,
+);
 
 export function ExploreBtn() {
     return (
@@ -8,7 +13,12 @@ export function ExploreBtn() {
             type="button"
             id="explore-btn"
             className="mt-7 mx-auto"
-            onClick={() => console.log("Click")}
+            onClick={() => {
+                if (isPostHogConfigured) {
+                    posthog.capture("event_exploration_started");
+                }
+                console.log("Click");
+            }}
         >
             <a href="#events">
                 Explore Events

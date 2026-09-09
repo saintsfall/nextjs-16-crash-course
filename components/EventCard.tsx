@@ -1,5 +1,12 @@
+'use client';
+
 import Link from "next/link";
 import Image from "next/image";
+import posthog from "posthog-js";
+
+const isPostHogConfigured = Boolean(
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && process.env.NEXT_PUBLIC_POSTHOG_HOST,
+);
 
 interface EventCardProps {
     title: string;
@@ -12,7 +19,15 @@ interface EventCardProps {
 
 export function EventCard( {title, image, slug, location, date, time}: EventCardProps) {
     return (
-        <Link href={`/events/${slug}`} id="event-card">
+        <Link
+            href={`/events/${slug}`}
+            id="event-card"
+            onClick={() => {
+                if (isPostHogConfigured) {
+                    posthog.capture("event_selected", { event_slug: slug });
+                }
+            }}
+        >
             <Image src={image} alt={title} width={410} height={300} className="poster" />
             <div className="flex flex-row gap-2">
                 <Image src="/icons/pin.svg" alt="location" width={14} height={14} />
