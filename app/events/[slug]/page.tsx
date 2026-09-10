@@ -4,6 +4,7 @@ import BookEvent from "@/components/BookEvent";
 import {IEvent} from "@/database";
 import {getSimilarEventsBySlug} from "@/lib/actions/event.actions";
 import {EventCard} from "@/components/EventCard";
+import {cacheLife} from "next/cache";
 
 type EventDetailsProps = {
     params: Promise<{ slug: string }>;
@@ -57,6 +58,9 @@ const EventDetailsTags = ({ tags }: EventDetailTags) => {
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 export default async function EventDetailsPage({ params }: EventDetailsProps) {
+    'use cache'
+    cacheLife('hours');
+
     const { slug } = await params;
 
     let event;
@@ -156,7 +160,7 @@ export default async function EventDetailsPage({ params }: EventDetailsProps) {
                             </p>
                         )}
 
-                        <BookEvent />
+                        <BookEvent eventId={event._id} slug={event.slug} />
                     </div>
                 </aside>
             </div>
@@ -165,7 +169,15 @@ export default async function EventDetailsPage({ params }: EventDetailsProps) {
                 <h2>Similar Events</h2>
                 <div className="events">
                     { similarEvents.length > 0 && similarEvents.map((similarEvent: IEvent) => (
-                        <EventCard key={similarEvent.title} {...similarEvent} />
+                        <EventCard
+                            key={similarEvent.slug}
+                            title={similarEvent.title}
+                            image={similarEvent.image}
+                            slug={similarEvent.slug}
+                            location={similarEvent.location}
+                            date={similarEvent.date}
+                            time={similarEvent.time}
+                        />
                     ))}
                 </div>
             </div>

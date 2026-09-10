@@ -4,6 +4,7 @@ import { Event } from "./event.model";
 
 export interface IBooking {
   eventId: Types.ObjectId;
+  slug: string;
   email: string;
   createdAt: Date;
   updatedAt: Date;
@@ -18,6 +19,13 @@ const bookingSchema = new Schema<IBooking>(
       type: Schema.Types.ObjectId,
       ref: "Event",
       required: true,
+      index: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
       index: true,
     },
     email: {
@@ -39,10 +47,18 @@ bookingSchema.pre("save", async function () {
   }
   this.email = email;
 
-  // MongoDB does not enforce foreign keys; confirm the Event still exists.
-  const eventExists = await Event.exists({ _id: this.eventId });
+  const slug = this.slug?.trim().toLowerCase();
+  if (!slug) {
+    throw new Error("Booking.slug is required");
+  }
+  this.slug = slug;
+
+  // Confirm the Event exists and that slug belongs to that event.
+  const eventExists = await Event.exists({ _id: this.eventId, slug });
   if (!eventExists) {
-    throw new Error(`Cannot save booking: Event ${String(this.eventId)} does not exist`);
+    throw new Error(
+      `Cannot save booking: Event ${String(this.eventId)} with slug "${slug}" does not exist`,
+    );
   }
 });
 
