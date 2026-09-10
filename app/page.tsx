@@ -1,7 +1,8 @@
 import { ExploreBtn } from "@/components/ExploreBtn";
 import { EventCard } from "@/components/EventCard";
-import {IEvent} from "@/database";
+import {Event, IEvent} from "@/database";
 import {cacheLife} from "next/cache";
+import dbConnect from "@/lib/mongodb";
 
 // import { events } from "@/lib/constants";
 
@@ -11,8 +12,9 @@ const Page = async () => {
     'use cache';
     cacheLife('hours')
 
-    const response = await fetch(`${BASE_URL}/api/events`);
-    const { events } = await response.json();
+    await dbConnect();
+
+    const events = await Event.find().sort({ createdAt: -1 }).lean();
 
     return (
       <section>
